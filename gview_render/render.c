@@ -49,7 +49,7 @@
 #else
 	#include "render_sdl1.h"
 #endif
-
+#include <SDL_ttf.h>
 
 int verbosity = 0;
 
@@ -250,6 +250,26 @@ int render_init(int render, int width, int height, int flags)
 			break;
 
 		case RENDER_SDL:
+			/*
+			* SDL_ttf
+			*/
+			{
+				SDL_version compile_version;
+				const SDL_version *link_version=TTF_Linked_Version();
+				SDL_TTF_VERSION(&compile_version);
+				printf("%s:compiled with SDL_ttf version: %d.%d.%d\n",__func__,
+						compile_version.major,
+						compile_version.minor,
+						compile_version.patch);
+				printf("%s:running with SDL_ttf version: %d.%d.%d\n",__func__,
+					link_version->major,
+					link_version->minor,
+					link_version->patch);
+
+				if(TTF_Init() < 0){
+						printf("Couldn't initialize TTF: %s\n",SDL_GetError());
+					}
+			}
 		default:
 			#if ENABLE_SDL2
 			ret = init_render_sdl2(my_width, my_height, flags);
@@ -259,9 +279,11 @@ int render_init(int render, int width, int height, int flags)
 			break;
 	}
 
-	if(ret)
+	if(ret){
 		render_api = RENDER_NONE;
+	}else{
 
+	}
 	return ret;
 }
 
@@ -430,7 +452,7 @@ int render_call_event_callback(int id)
 
 	if(verbosity > 1)
 		printf("RENDER: event %i -> callback %i\n", id, index);
-		
+
 	if(index < 0)
 		return index;
 

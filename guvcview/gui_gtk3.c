@@ -1034,3 +1034,48 @@ void gui_close_gtk3()
 
 	gtk_main_called = 0;
 }
+
+#if 0
+/* Draw a rectangle on the screen */
+#include <gdk/gdk.h>
+typedef struct _components {
+    GtkWidget *window;
+    GtkWidget *previous;
+    GtkWidget *next;
+    GtkWidget *graphNavigationPanel;
+    GtkWidget *mainPanel;
+    GtkWidget *drawingArea;
+    GdkPixmap *pixMap;
+} components;
+
+static     components this;
+
+static void
+draw_brush (GtkWidget *widget, gdouble x, gdouble y)
+{
+	GdkRectangle update_rect;
+
+	update_rect.x = x - 5;
+	update_rect.y = y - 5;
+	update_rect.width = 10;
+	update_rect.height = 10;
+
+	if (this.pixMap)
+		g_object_unref(this.pixMap);
+
+	this.pixMap = gdk_pixmap_new(widget->window,
+				widget->allocation.width,
+				widget->allocation.height,
+				-1);
+
+	gdk_draw_rectangle (this.pixMap,
+				widget->style->black_gc,
+				TRUE,
+				update_rect.x, update_rect.y,
+				update_rect.width, update_rect.height);
+
+	gtk_widget_queue_draw_area (widget,
+								update_rect.x, update_rect.y,
+						update_rect.width, update_rect.height);
+}
+#endif

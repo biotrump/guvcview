@@ -30,7 +30,7 @@ libgviewrender_la_CFLAGS = $(GVIEWRENDER_CFLAGS) \
 			-I$(top_srcdir) \
 			-I$(top_srcdir)/includes
 
-libgviewrender_la_LIBADD= $(GVIEWRENDER_LIBS) $(GSL_LIBS)
+libgviewrender_la_LIBADD= $(GVIEWRENDER_LIBS) $(GSL_LIBS) -lSDL2_ttf
 
 libgviewrender_la_LDFLAGS= -version-info $(GVIEWRENDER_LIBRARY_VERSION) -release $(GVIEWRENDER_API_VERSION)
 

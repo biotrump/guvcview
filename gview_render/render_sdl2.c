@@ -24,6 +24,7 @@
 ********************************************************************************/
 
 #include <SDL.h>
+#include <SDL_ttf.h>
 #include <assert.h>
 
 #include "gview.h"
@@ -292,10 +293,8 @@ int render_sdl2_frame(uint8_t *frame, int width, int height)
 
 	void* texture_pixels;
 	int pitch;
-
 	SDL_SetRenderDrawColor(main_renderer, 0, 0, 0, 255); /*black*/
 	SDL_RenderClear(main_renderer);
-
 
 	if (SDL_LockTexture(rending_texture, NULL, &texture_pixels, &pitch))
 	{
@@ -304,7 +303,6 @@ int render_sdl2_frame(uint8_t *frame, int width, int height)
 	}
 
 	memcpy(texture_pixels, frame, size);
-
 	/*osd vu meter*/
 	if(((render_get_osd_mask() &
 		(REND_OSD_VUMETER_MONO | REND_OSD_VUMETER_STEREO))) != 0)
@@ -313,10 +311,42 @@ int render_sdl2_frame(uint8_t *frame, int width, int height)
 	if(((render_get_osd_mask() &
 		REND_OSD_CROSSHAIR)) != 0)
 		render_osd_crosshair(texture_pixels, width, height);
-
 	SDL_UnlockTexture(rending_texture);
-
 	SDL_RenderCopy(main_renderer, rending_texture, NULL, NULL);
+	/*
+	draw a rectangle
+	*/
+	SDL_Rect srcrect={10,10,100,100};
+	SDL_SetRenderDrawColor(/*rending_texture*/main_renderer, 255, 0, 0, 255);
+	SDL_RenderDrawRect(/*rending_texture*/main_renderer,&srcrect);
+	//draw font
+	int ptsize=10;
+	char *myfont="/usr/share/fonts/truetype/droid/DroidSans.ttf";
+	TTF_Font *font = TTF_OpenFont(myfont, ptsize);
+	if ( font == NULL ) {
+			printf("Couldn't load %d pt font from %s: %s\n",
+						ptsize, myfont, SDL_GetError());
+			TTF_Quit();
+	}else{
+		SDL_Color white = { 0xFF, 0xFF, 0xFF, 0 };
+		SDL_Color black = { 0x00, 0x00, 0x00, 0 };
+		SDL_Color red = { 0xFF, 0x00, 0x00, 0 };
+		SDL_Color green = { 0x00, 0xFF, 0x00, 0 };
+
+		SDL_Color *forecol=&black;
+		SDL_Color *backcol;
+
+		TTF_SetFontStyle(font, TTF_STYLE_NORMAL);
+		TTF_SetFontOutline(font, 0);
+		TTF_SetFontKerning(font, 1);
+		TTF_SetFontHinting(font, TTF_HINTING_NORMAL);
+		SDL_Surface *text=TTF_RenderText_Solid/*TTF_RenderText_Blended*//*TTF_RenderUTF8_Solid*/(font,"hello",red);
+		SDL_Texture	*message=SDL_CreateTextureFromSurface(main_renderer, text);
+		SDL_RenderCopy(main_renderer, message, NULL, &srcrect);
+		SDL_FreeSurface(text);
+		TTF_CloseFont(font);
+		SDL_DestroyTexture(message);
+	}
 
 	SDL_RenderPresent(main_renderer);
 }
