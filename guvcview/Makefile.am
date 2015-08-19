@@ -6,6 +6,7 @@ bin_PROGRAMS = guvcview
 
 guvcview_SOURCES = guvcview.c \
 				   video_capture.c \
+				   rppg_capture.c \
 				   core_io.c \
 				   options.c \
 				   config.c \
@@ -16,6 +17,7 @@ guvcview_SOURCES = guvcview.c \
 				   gui_gtk3_videoctrls.c \
 				   gui_gtk3_h264ctrls.c \
 				   gui_gtk3_audioctrls.c \
+				   gui_gtk3_rppgctrls.c \
 				   gui_gtk3_callbacks.c
 
 guvcview_CFLAGS = $(GUVCVIEW_CFLAGS) \
@@ -31,14 +33,16 @@ guvcview_CFLAGS = $(GUVCVIEW_CFLAGS) \
 		  -I$(top_srcdir)/gview_v4l2core \
 		  -I$(top_srcdir)/gview_render \
 		  -I$(top_srcdir)/gview_audio \
-		  -I$(top_srcdir)/gview_encoder
+		  -I$(top_srcdir)/gview_encoder \
+		  -I/home/thomas/build/bcv-x86.gl/dsp/core
 
-guvcview_LDFLAGS = $(LIBINTL)
+guvcview_LDFLAGS = $(LIBINTL) -L/home/thomas/build/bcv-x86.gl/out/dsp/core/libs/x86_64
 
 guvcview_LDADD = ../gview_v4l2core/$(GVIEWV4L2CORE_LIBRARY_NAME).la \
                  ../gview_render/$(GVIEWRENDER_LIBRARY_NAME).la \
                  ../gview_audio/$(GVIEWAUDIO_LIBRARY_NAME).la \
                  ../gview_encoder/$(GVIEWENCODER_LIBRARY_NAME).la \
+                 -lbcv-dsp \
                  $(GUVCVIEW_LIBS) \
 				 $(PTHREAD_LIBS) \
                  -lm

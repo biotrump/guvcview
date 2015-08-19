@@ -229,6 +229,18 @@ int gui_attach_gtk3_videoctrls(GtkWidget *parent);
 int gui_attach_gtk3_audioctrls(GtkWidget *parent);
 
 /*
+ * attach rppg controls tab widget
+ * args:
+ *   parent - tab parent widget
+ *
+ * asserts:
+ *   parent is not null
+ *
+ * returns: error code (0 -OK)
+ */
+int gui_attach_gtk3_rppgctrls(GtkWidget *parent);
+
+/*
  * get gtk control widgets for v4l2 control id
  * args:
  *   id - v4l2 control id

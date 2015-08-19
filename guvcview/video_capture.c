@@ -52,6 +52,7 @@ static int render = RENDER_SDL; /*render API*/
 static int quit = 0; /*terminate flag*/
 static int save_image = 0; /*save image flag*/
 static int save_video = 0; /*save video flag*/
+static int start_rppg = 0;	/* start rppg */
 
 static uint64_t my_photo_timer = 0; /*timer count*/
 
@@ -189,7 +190,7 @@ void set_soft_autofocus(int value)
 void video_capture_save_video(int value)
 {
 	save_video = value;
-	
+
 	if(debug_level > 1)
 		printf("GUVCVIEW: save video flag changed to %i\n", save_video);
 }
@@ -207,6 +208,39 @@ void video_capture_save_video(int value)
 int video_capture_get_save_video()
 {
 	return save_video;
+}
+
+/*
+ * sets the rppg flag
+ * args:
+ *    value - start_rppg flag value
+ *
+ * asserts:
+ *    none
+ *
+ * returns: none
+ */
+void rppg_capture_start(int value)
+{
+	start_rppg = value;
+
+	if(debug_level > 1)
+		printf("GUVCVIEW: rppg start flag changed to %d\n", start_rppg);
+}
+
+/*
+ * gets the rppg flag
+ * args:
+ *    none
+ *
+ * asserts:
+ *    none
+ *
+ * returns: start_rppg flag
+ */
+int rppg_capture_get_start()
+{
+	return start_rppg;
 }
 
 /*
@@ -390,7 +424,7 @@ int quit_callback(void *data)
 int key_I_callback(void *data)
 {
 	gui_click_image_capture_button();
-	
+
 	if(debug_level > 1)
 		printf("GUVCVIEW: I key pressed\n");
 
@@ -410,7 +444,7 @@ int key_I_callback(void *data)
 int key_V_callback(void *data)
 {
 	gui_click_video_capture_button(data);
-	
+
 	if(debug_level > 1)
 		printf("GUVCVIEW: V key pressed\n");
 
@@ -565,11 +599,11 @@ audio_context_t *create_audio_context(int api, int device)
 	close_audio_context();
 
 	my_audio_ctx = audio_init(api, device);
-	
+
 	/*force a valid number of channels*/
 	if(my_audio_ctx != NULL && my_audio_ctx->channels > 2)
 		my_audio_ctx->channels = 2;
-		
+
 	return my_audio_ctx;
 }
 
@@ -587,11 +621,11 @@ audio_context_t *get_audio_context()
 {
 	if(!my_audio_ctx)
 		return NULL;
-		
+
 	/*force a valid number of channels*/
 	if(my_audio_ctx->channels > 2)
 		my_audio_ctx->channels = 2;
-		
+
 	return my_audio_ctx;
 }
 
@@ -630,7 +664,7 @@ static void *audio_processing_loop(void *data)
 	if(debug_level > 1)
 		printf("GUVCVIEW: audio thread (tid: %u)\n",
 			(unsigned int) syscall (SYS_gettid));
-		
+
 	audio_context_t *audio_ctx = get_audio_context();
 	if(!audio_ctx)
 	{
@@ -654,7 +688,7 @@ static void *audio_processing_loop(void *data)
 	audio_buff = audio_get_buffer(audio_ctx);
 
 	int sample_type = encoder_get_audio_sample_fmt(encoder_ctx);
-	
+
 	uint32_t osd_mask = render_get_osd_mask();
 
 	/*enable vu meter OSD display*/
@@ -669,10 +703,10 @@ static void *audio_processing_loop(void *data)
 	{
 		int ret = audio_get_next_buffer(audio_ctx, audio_buff,
 				sample_type, my_audio_mask);
-		
+
 		if(ret > 0)
 		{
-			/* 
+			/*
 			 * no buffers to process
 			 * sleep a couple of milisec
 			 */
@@ -690,7 +724,7 @@ static void *audio_processing_loop(void *data)
 
 			encoder_process_audio_buffer(encoder_ctx, audio_buff->data);
 		}
-		
+
 	}
 
 	/*flush any delayed audio frames*/
@@ -726,7 +760,7 @@ static void *audio_processing_loop(void *data)
 static void *encoder_loop(void *data)
 {
 	my_encoder_status = 1;
-	
+
 	if(debug_level > 1)
 		printf("GUVCVIEW: encoder thread (tid: %u)\n",
 			(unsigned int) syscall (SYS_gettid));
@@ -837,13 +871,13 @@ static void *encoder_loop(void *data)
 	{
 		if(debug_level > 1)
 			printf("GUVCVIEW: starting encoder audio thread\n");
-		
+
 		int ret = __THREAD_CREATE(&encoder_audio_thread, audio_processing_loop, (void *) encoder_ctx);
-		
+
 		if(ret)
 			fprintf(stderr, "GUVCVIEW: encoder audio thread creation failed (%i)\n", ret);
 		else if(debug_level > 2)
-			printf("GUVCVIEW: created audio encoder thread with tid: %u\n", 
+			printf("GUVCVIEW: created audio encoder thread with tid: %u\n",
 				(unsigned int) encoder_audio_thread);
 	}
 
@@ -852,7 +886,7 @@ static void *encoder_loop(void *data)
 		/*process the video buffer*/
 		if(encoder_process_next_video_buffer(encoder_ctx) > 0)
 		{
-			/* 
+			/*
 			 * no buffers to process
 			 * sleep a couple of milisec
 			 */
@@ -860,8 +894,8 @@ static void *encoder_loop(void *data)
 				.tv_sec = 0,
 				.tv_nsec = 1000000};/*nanosec*/
 			 nanosleep(&req, NULL);
-			 
-		}	
+
+		}
 
 		/*disk supervisor*/
 		if(encoder_ctx->enc_video_ctx->pts - last_check_pts > 2 * NSEC_PER_SEC)
@@ -875,7 +909,7 @@ static void *encoder_loop(void *data)
 			}
 		}
 	}
-	
+
 	/*flush the video buffer*/
 	encoder_flush_video_buffer(encoder_ctx);
 
@@ -930,22 +964,22 @@ void *capture_loop(void *data)
 
 	/*reset quit flag*/
 	quit = 0;
-	
+
 	if(debug_level > 1)
-		printf("GUVCVIEW: capture thread (tid: %u)\n", 
+		printf("GUVCVIEW: capture thread (tid: %u)\n",
 			(unsigned int) syscall (SYS_gettid));
 
 	int ret = 0;
-	
+
 	int render_flags = 0;
-	
+
 	if (strcasecmp(my_options->render_flag, "full") == 0)
 		render_flags = 1;
 	else if (strcasecmp(my_options->render_flag, "max") == 0)
 		render_flags = 2;
-	
+
 	render_set_verbosity(debug_level);
-	
+
 	if(render_init(render, v4l2core_get_frame_width(), v4l2core_get_frame_height(), render_flags) < 0)
 		render = RENDER_NONE;
 	else
@@ -979,8 +1013,41 @@ void *capture_loop(void *data)
 	if(my_options->photo_npics > 0)
 		my_photo_npics = my_options->photo_npics;
 
+	////////////////////////////////////////////
+/*
+//#include "picornt.h"
+#include "bcv-ppg.h"
+#include "bcv-basetype.h"
+#include "bcv-matrix.h"
+#include "bcv-cq.h"
+#include "bcv-mobj.h"
+#include "dsp-core.h"
+#include "bcv-dspcore.h"
+#include "bcv-yuvrgb.h"
+*/
+#include "bcv-export.h"
+#define	MAX_OBJECTS				(64)
+#define ORIENTATION_NONE 		0
+#define CV_MODE_FUNC_FACE 		(0x1 << 0)
+#define	MEASURE_EVENT_START	(1)
+#define	MEASURE_EVENT_STOP	(2)
+
+#include "v4l2_core.h"
+
+	extern v4l2_dev_t* vd;
+	int bcvFrameProcess(unsigned sfmt, unsigned char *p, int length, int width, int height, int Mode,
+			int MaxFaces, int Orientation, unsigned Interval, int breath);
+	void bcvCVMode( int Mode );
+	int bcvMeasureEvent(int Event);
+	void bcv_deinit(void);
+	void bcv_cbinit(AND_CBLIST cblist);
+
+	unsigned cv_mode = CV_MODE_FUNC_FACE;
+	bcvCVMode(cv_mode);
+	////////////////////////////////////////
+
 	v4l2core_start_stream();
-	
+
 	v4l2_frame_buff_t *frame = NULL; //pointer to frame buffer
 
 	while(!quit)
@@ -1042,6 +1109,30 @@ void *capture_loop(void *data)
 		frame = v4l2core_get_decoded_frame();
 		if( frame != NULL)
 		{
+			////////////////////////////////////////////////////////
+			/*
+			 * libbcv-dsp
+			 */
+			if(rppg_capture_get_start()){
+				float interval;
+				static uint64_t last_interval=0;
+				//uint64_t frame->timestamp;
+				if(last_interval){
+					interval = (frame->timestamp - last_interval)/1000;//ns->us
+					last_interval = frame->timestamp;
+				}else{
+					last_interval=frame->timestamp;
+					interval=0.0;
+				}
+#if 1
+				bcvFrameProcess(vd->requested_fmt, (unsigned char *)/*frame->yuv_frame*/frame->raw_frame,
+								frame->raw_frame_size,
+								v4l2core_get_frame_width(), v4l2core_get_frame_height(),
+						cv_mode, MAX_OBJECTS, ORIENTATION_NONE, interval, 0);
+#endif
+			}
+			//////////////////////////////////////////////////////////////////////
+
 			/*run software autofocus (must be called after frame was grabbed and decoded)*/
 			if(do_soft_autofocus || do_soft_focus)
 				do_soft_focus = v4l2core_soft_autofocus_run(frame);
@@ -1169,9 +1260,12 @@ void *capture_loop(void *data)
 			v4l2core_release_frame(frame);
 		}
 	}
+	///////////////////////////////
+	//bcvMeasureEvent(MEASURE_EVENT_STOP);	//stop measured
+	bcv_deinit();
+	////////////////////////////////////
 
 	v4l2core_stop_stream();
-	
 	/*if we are still saving video then stop it*/
 	if(video_capture_get_save_video())
 		stop_encoder_thread();
@@ -1194,11 +1288,11 @@ void *capture_loop(void *data)
 int start_encoder_thread(void *data)
 {
 	int ret = __THREAD_CREATE(&encoder_thread, encoder_loop, data);
-	
+
 	if(ret)
 		fprintf(stderr, "GUVCVIEW: encoder thread creation failed (%i)\n", ret);
 	else if(debug_level > 2)
-		printf("GUVCVIEW: created encoder thread with tid: %u\n", 
+		printf("GUVCVIEW: created encoder thread with tid: %u\n",
 			(unsigned int) encoder_thread);
 
 	return ret;

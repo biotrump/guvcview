@@ -67,6 +67,13 @@ static int photo_sufix_flag = 1;
 /*photo format*/
 static int photo_format = IMG_FMT_JPG;
 
+/*rppg basename*/
+static char *rppg_name = NULL;
+/*rppg path*/
+static char *rppg_path = NULL;
+/*rppg sufix flag*/
+static int rppg_sufix_flag = 1;
+
 /*video basename*/
 static char *video_name = NULL;
 /*video path*/
@@ -305,6 +312,39 @@ void gui_click_video_capture_button()
 			break;
 	}
 }
+
+/*
+ * click video capture button
+ * args:
+ *   none
+ *
+ * asserts:
+ *    none
+ *
+ * returns: none
+ */
+void gui_click_rppg_capture_button()
+{
+	switch(gui_api)
+	{
+		case GUI_NONE:
+			if(!get_rppg_status())
+				start_rppg_thread();
+			else
+			{
+				//if(check_video_timer())
+				//	reset_video_timer();
+				stop_rppg_thread();
+			}
+			break;
+
+		case GUI_GTK3:
+		default:
+			gui_click_rppg_capture_button_gtk3();
+			break;
+	}
+}
+
 /*
  * sets the Image capture button label
  * args:
@@ -349,6 +389,30 @@ void gui_set_video_capture_button_status(int flag)
 		case GUI_GTK3:
 		default:
 			gui_set_video_capture_button_status_gtk3(flag);
+			break;
+	}
+}
+
+/*
+ * sets the rppg capture button status (on|off)
+ * args:
+ *   flag: video capture button status
+ *
+ * asserts:
+ *   none
+ *
+ * returns: none
+ */
+void gui_set_rppg_capture_button_status(int flag)
+{
+	switch(gui_api)
+	{
+		case GUI_NONE:
+			break;
+
+		case GUI_GTK3:
+		default:
+			gui_set_rppg_capture_button_status_gtk3(flag);
 			break;
 	}
 }
@@ -614,6 +678,129 @@ void set_video_path(const char *path)
 
 	/*so here we use the dup string*/
 	my_config->video_path = strdup(video_path);
+}
+
+/*
+ * gets the rppg file basename
+ * args:
+ *   none
+ *
+ * asserts:
+ *   none
+ *
+ * returns: rppg file basename
+ */
+char *get_rppg_name()
+{
+	if(!rppg_name)
+		rppg_name = strdup("my_rppg.raw");
+
+	return rppg_name;
+}
+
+/*
+ * sets the rppg file basename
+ * args:
+ *   name: rppg file basename
+ *
+ * asserts:
+ *   none
+ *
+ * returns: none
+ */
+void set_rppg_name(const char *name)
+{
+	if(rppg_name != NULL)
+		free(rppg_name);
+
+	rppg_name = strdup(name);
+
+	/* update the config */
+	config_t *my_config = config_get();
+
+	/*this can be the function arg 'name'*/
+	if(my_config->rppg_name)
+		free(my_config->rppg_name);
+
+	/*so here we use the dup string*/
+	my_config->rppg_name = strdup(rppg_name);
+}
+
+/*
+ * gets the rppg file path (to dir)
+ * args:
+ *   none
+ *
+ * asserts:
+ *   none
+ *
+ * returns: rppg file path
+ */
+char *get_rppg_path()
+{
+	if(!rppg_path)
+		rppg_path = strdup(getenv("HOME"));
+
+	return rppg_path;
+}
+
+/*
+ * sets rppg path (to dir)
+ * args:
+ *   path: rppg file path
+ *
+ * asserts:
+ *   none
+ *
+ * returns: none
+ */
+void set_rppg_path(const char *path)
+{
+	if(rppg_path != NULL)
+		free(rppg_path);
+
+	rppg_path = strdup(path);
+
+	/* update the config */
+	config_t *my_config = config_get();
+
+	/*this can be the function arg 'path'*/
+	if(my_config->rppg_path)
+		free(my_config->rppg_path);
+
+	/*so here we use the dup string*/
+	my_config->rppg_path = strdup(rppg_path);
+}
+
+
+/*
+ * gets photo sufix flag
+ * args:
+ *   none
+ *
+ * asserts:
+ *   none
+ *
+ * returns: photo sufix flag
+ */
+int get_rppg_sufix_flag()
+{
+	return rppg_sufix_flag;
+}
+
+/*
+ * sets the photo sufix flag
+ * args:
+ *   flag: photo sufix flag
+ *
+ * asserts:
+ *   none
+ *
+ * returns: none
+ */
+void set_rppg_sufix_flag(int flag)
+{
+	rppg_sufix_flag = flag;
 }
 
 /*

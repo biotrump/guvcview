@@ -287,6 +287,78 @@ char *get_video_path();
 void set_video_path(const char *path);
 
 /*
+ * gets the rppg file basename
+ * args:
+ *   none
+ *
+ * asserts:
+ *   none
+ *
+ * returns: rppg file basename
+ */
+char *get_rppg_name(void);
+
+/*
+ * sets the rppg file basename
+ * args:
+ *   name: rppg file basename
+ *
+ * asserts:
+ *   none
+ *
+ * returns: none
+ */
+void set_rppg_name(const char *name);
+
+/*
+ * gets the rppg file path (to dir)
+ * args:
+ *   none
+ *
+ * asserts:
+ *   none
+ *
+ * returns: rppg file path
+ */
+char *get_rppg_path(void);
+
+/*
+ * sets rppg path (to dir)
+ * args:
+ *   path: rppg file path
+ *
+ * asserts:
+ *   none
+ *
+ * returns: none
+ */
+void set_rppg_path(const char *path);
+
+/*
+ * gets photo sufix flag
+ * args:
+ *   none
+ *
+ * asserts:
+ *   none
+ *
+ * returns: photo sufix flag
+ */
+int get_rppg_sufix_flag();
+
+/*
+ * sets the photo sufix flag
+ * args:
+ *   flag: photo sufix flag
+ *
+ * asserts:
+ *   none
+ *
+ * returns: none
+ */
+void set_rppg_sufix_flag(int flag);
+
+/*
  * gets photo sufix flag
  * args:
  *   none

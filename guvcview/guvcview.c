@@ -94,23 +94,26 @@ int main(int argc, char *argv[])
             }
         }
     }
-	
+
 	// Register signal and signal handler
 	signal(SIGINT,  signal_callback_handler);
 	signal(SIGUSR1, signal_callback_handler);
 	signal(SIGUSR2, signal_callback_handler);
-	
+
 	/*localization*/
 	char* lc_all = setlocale (LC_ALL, "");
 	char* lc_dir = bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	char* txtdom = textdomain (GETTEXT_PACKAGE);
 
+	printf("GUVCVIEW: version %s, argc=%d\n", VERSION, argc);
+	int i;
+	for(i=0;i < argc;i++)
+		printf("%d:argv[i]=%s\n",i, argv[i]);
+
 	/*parse command line options*/
 	if(options_parse(argc, argv))
 		return 0;
-	
-	printf("GUVCVIEW: version %s\n", VERSION);
 
 	/*get command line options*/
 	options_t *my_options = options_get();
@@ -131,12 +134,12 @@ int main(int argc, char *argv[])
 
 	/*update config with options*/
 	config_update(my_options);
-
 	/*get config data*/
 	config_t *my_config = config_get();
+	printf("width=%d, height=%d\n", my_config->width, my_config->height);
 
 	debug_level = my_options->verbosity;
-	
+
 	if (debug_level > 1) printf("GUVCVIEW: language catalog=> dir:%s type:%s cat:%s.mo\n",
 		lc_dir, lc_all, txtdom);
 
@@ -171,10 +174,10 @@ int main(int argc, char *argv[])
 	if(debug_level > 1)
 		printf("GUVCVIEW: main thread (tid: %u)\n",
 			(unsigned int) syscall (SYS_gettid));
-		
+
 	/*initialize the v4l2 core*/
 	v4l2core_set_verbosity(debug_level);
-	
+
 	if(my_options->disable_libv4l2)
 		v4l2core_disable_libv4l2();
 	/*init the device list*/
@@ -189,9 +192,9 @@ int main(int argc, char *argv[])
 		options_clean();
 		return -1;
 	}
-	else		
+	else
 		set_render_flag(render);
-	
+
 
 	/*select capture method*/
 	if(strcasecmp(my_config->capture, "read") == 0)
@@ -218,7 +221,7 @@ int main(int argc, char *argv[])
 	/*select video codec*/
 	if(debug_level > 1)
 		printf("GUVCVIEW: setting video codec to '%s'\n", my_config->video_codec);
-		
+
 	int vcodec_ind = encoder_get_video_codec_ind_4cc(my_config->video_codec);
 	if(vcodec_ind < 0)
 	{
@@ -284,7 +287,7 @@ int main(int argc, char *argv[])
 		my_config->audio_device = audio_ctx->device;
 	else
 		fprintf(stderr, "GUVCVIEW: couldn't get a valid audio context for the selected api - disabling audio\n");
-	
+
 	encoder_set_verbosity(debug_level);
 	/*init the encoder*/
 	encoder_init();
@@ -329,6 +332,9 @@ int main(int argc, char *argv[])
 			capture_loop_data_t cl_data;
 			cl_data.options = (void *) my_options;
 			cl_data.config = (void *) my_config;
+
+			void bcvImageResolution( int width, int height );
+			bcvImageResolution(my_config->width, my_config->height);
 
 			ret = __THREAD_CREATE(&capture_thread, capture_loop, (void *) &cl_data);
 

@@ -114,6 +114,19 @@ void controls_profile_clicked (GtkWidget *item, void *data);
 void photo_sufix_toggled (GtkWidget *item, void *data);
 
 /*
+ * rppg suffix toggled event
+ * args:
+ *    item - widget that generated the event
+ *    data - pointer to user data
+ *
+ * asserts:
+ *    none
+ *
+ * returns: none
+ */
+void rppg_sufix_toggled (GtkWidget *item, void *data);
+
+/*
  * video suffix toggled event
  * args:
  *    item - widget that generated the event
@@ -151,6 +164,7 @@ void video_codec_changed (GtkRadioMenuItem *item, void *data);
  * returns: none
  */
 void audio_codec_changed (GtkRadioMenuItem *item, void *data);
+
 /*
  * photo file clicked event
  * args:
@@ -163,6 +177,19 @@ void audio_codec_changed (GtkRadioMenuItem *item, void *data);
  * returns: none
  */
 void photo_file_clicked (GtkWidget *item, void *data);
+
+/*
+ * rppg file clicked event
+ * args:
+ *   item - pointer to widget that generated the event
+ *   data - pointer to user data
+ *
+ * asserts:
+ *   none
+ *
+ * returns: none
+ */
+void rppg_file_clicked (GtkWidget *item, void *data);
 
 /*
  * video file clicked event
@@ -202,6 +229,19 @@ void capture_image_clicked (GtkButton *button, void *data);
  * returns: none
  */
 void capture_video_clicked(GtkToggleButton *button, void *data);
+
+/*
+ * capture rppg button clicked event
+ * args:
+ *   button - widget that generated the event
+ *   data - pointer to user data
+ *
+ * asserts:
+ *   none
+ *
+ * returns: none
+ */
+void capture_rppg_clicked(GtkToggleButton *button, void *data);
 
 /*
  * pan/tilt step changed

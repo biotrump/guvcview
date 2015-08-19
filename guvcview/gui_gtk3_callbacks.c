@@ -286,6 +286,27 @@ void photo_sufix_toggled (GtkWidget *item, void *data)
 }
 
 /*
+ * rppg suffix toggled event
+ * args:
+ *    item - widget that generated the event
+ *    data - pointer to user data
+ *
+ * asserts:
+ *    none
+ *
+ * returns: none
+ */
+void rppg_sufix_toggled (GtkWidget *item, void *data)
+{
+  	int flag = gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(item)) ? 1 : 0;
+	set_rppg_sufix_flag(flag);
+
+	/*update config*/
+	config_t *my_config = config_get();
+	my_config->rppg_sufix = flag;
+}
+
+/*
  * video suffix toggled event
  * args:
  *    item - widget that generated the event
@@ -595,6 +616,107 @@ void photo_file_clicked (GtkWidget *item, void *data)
 }
 
 /*
+ * photo file clicked event
+ * args:
+ *   item - pointer to widget that generated the event
+ *   data - pointer to user data
+ *
+ * asserts:
+ *   none
+ *
+ * returns: none
+ */
+void rppg_file_clicked (GtkWidget *item, void *data)
+{
+	GtkWidget *FileDialog;
+
+	GtkWidget *main_window = get_main_window_gtk3();
+
+	FileDialog = gtk_file_chooser_dialog_new (_("rppg file name"),
+			GTK_WINDOW(main_window),
+			GTK_FILE_CHOOSER_ACTION_SAVE,
+			_("_Cancel"), GTK_RESPONSE_CANCEL,
+			_("_Save"), GTK_RESPONSE_ACCEPT,
+			NULL);
+	gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (FileDialog), TRUE);
+
+	/** create a file filter */
+	GtkFileFilter *filter = gtk_file_filter_new();
+#if 0
+	GtkWidget *FBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+	GtkWidget *format_label = gtk_label_new(_("File Format:"));
+	gtk_widget_set_halign (FBox, GTK_ALIGN_FILL);
+	gtk_widget_set_hexpand (FBox, TRUE);
+	gtk_widget_set_hexpand (format_label, FALSE);
+	gtk_widget_show(FBox);
+	gtk_widget_show(format_label);
+	gtk_box_pack_start(GTK_BOX(FBox), format_label, FALSE, FALSE, 2);
+
+	GtkWidget *ImgFormat = gtk_combo_box_text_new ();
+	gtk_widget_set_halign (ImgFormat, GTK_ALIGN_FILL);
+	gtk_widget_set_hexpand (ImgFormat, TRUE);
+
+	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(ImgFormat),_("Raw  (*.raw)"));
+	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(ImgFormat),_("Jpeg (*.jpg)"));
+	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(ImgFormat),_("Png  (*.png)"));
+	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(ImgFormat),_("Bmp  (*.bmp)"));
+
+	gtk_combo_box_set_active(GTK_COMBO_BOX(ImgFormat), get_photo_format());
+	gtk_box_pack_start(GTK_BOX(FBox), ImgFormat, FALSE, FALSE, 2);
+	gtk_widget_show(ImgFormat);
+
+	/**add a pattern to the filter*/
+	switch(get_photo_format())
+	{
+		case IMG_FMT_RAW:
+			gtk_file_filter_add_pattern(filter, "*.raw");
+			break;
+		case IMG_FMT_PNG:
+			gtk_file_filter_add_pattern(filter, "*.png");
+			break;
+		case IMG_FMT_BMP:
+			gtk_file_filter_add_pattern(filter, "*.bmp");
+			break;
+		default:
+		case IMG_FMT_JPG:
+			gtk_file_filter_add_pattern(filter, "*.jpg");
+			break;
+	}
+
+	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER (FileDialog), filter);
+	gtk_file_chooser_set_extra_widget(GTK_FILE_CHOOSER (FileDialog), FBox);
+
+	g_signal_connect (GTK_COMBO_BOX(ImgFormat), "changed",
+		G_CALLBACK (photo_update_extension), FileDialog);
+#endif
+
+	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (FileDialog),
+		get_rppg_name());
+
+	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (FileDialog),
+		get_rppg_path());
+
+	if (gtk_dialog_run (GTK_DIALOG (FileDialog)) == GTK_RESPONSE_ACCEPT)
+	{
+		const char *filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (FileDialog));
+
+		char *basename = get_file_basename(filename);
+		if(basename)
+		{
+			set_rppg_name(basename);
+			free(basename);
+		}
+		char *pathname = get_file_pathname(filename);
+		if(pathname)
+		{
+			set_rppg_path(pathname);
+			free(pathname);
+		}
+	}
+	gtk_widget_destroy (FileDialog);
+}
+
+/*
  * video file clicked event
  * args:
  *   item - pointer to widget that generated the event
@@ -746,6 +868,39 @@ void capture_video_clicked(GtkToggleButton *button, void *data)
 		gtk_button_set_label(GTK_BUTTON(button), _("Cap. Video (V)"));
 		/*make sure video timer is reset*/
 		reset_video_timer();
+	}
+}
+
+/*
+ * capture video button clicked event
+ * args:
+ *   button - widget that generated the event
+ *   data - pointer to user data
+ *
+ * asserts:
+ *   none
+ *
+ * returns: none
+ */
+void capture_rppg_clicked(GtkToggleButton *button, void *data)
+{
+	int active = gtk_toggle_button_get_active (button);
+
+	if(debug_level > 0)
+		printf("GUVCVIEW: rppg capture toggled(%i)\n", active);
+
+	if(active)
+	{
+		start_rppg_thread();
+		gtk_button_set_label(GTK_BUTTON(button), _("Stop rppg"));
+
+	}
+	else
+	{
+		stop_rppg_thread();
+		gtk_button_set_label(GTK_BUTTON(button), _("Start rppg"));
+		/*make sure video timer is reset*/
+		//reset_video_timer();
 	}
 }
 
@@ -1211,10 +1366,10 @@ void frame_rate_changed (GtkComboBox *wgtFrameRate, void *data)
 	int index = gtk_combo_box_get_active (wgtFrameRate);
 
 	v4l2_stream_formats_t *list_stream_formats = v4l2core_get_formats_list();
-	
+
 	int fps_denom = list_stream_formats[format_index].list_stream_cap[resolu_index].framerate_denom[index];
 	int fps_num = list_stream_formats[format_index].list_stream_cap[resolu_index].framerate_num[index];
-	
+
 	v4l2core_define_fps(fps_num, fps_denom);
 
 	int fps[2] = {fps_num, fps_denom};
@@ -1251,7 +1406,7 @@ void resolution_changed (GtkComboBox *wgtResolution, void *data)
 	gtk_list_store_clear(store);
 
 	v4l2_stream_formats_t *list_stream_formats = v4l2core_get_formats_list();
-	
+
 	int width = list_stream_formats[format_index].list_stream_cap[cmb_index].width;
 	int height = list_stream_formats[format_index].list_stream_cap[cmb_index].height;
 
@@ -1297,6 +1452,9 @@ void resolution_changed (GtkComboBox *wgtResolution, void *data)
 
 	my_config->width = width;
 	my_config->height= height;
+
+	void bcvImageResolution( int width, int height );
+	bcvImageResolution(width, height);
 }
 
 /*
@@ -1329,7 +1487,7 @@ void format_changed(GtkComboBox *wgtInpType, void *data)
 	gtk_list_store_clear(store);
 
 	v4l2_stream_formats_t *list_stream_formats = v4l2core_get_formats_list();
-		
+
 	int format = list_stream_formats[index].format;
 
 	/*update config*/
@@ -1505,11 +1663,11 @@ void audio_device_changed(GtkComboBox *combo, void *data)
 		index = 0;
 	else if (index >= audio_ctx->num_input_dev)
 		index = audio_ctx->num_input_dev - 1;
-	
+
 	/*update config*/
 	config_t *my_config = config_get();
 	my_config->audio_device = index;
-	
+
 	/*set the audio device defaults*/
 	audio_set_device(audio_ctx, my_config->audio_device);
 
@@ -1529,7 +1687,7 @@ void audio_device_changed(GtkComboBox *combo, void *data)
 
 	if(index == 0)
 		audio_ctx->samprate = audio_ctx->list_devices[audio_ctx->device].samprate;
-		
+
 	gtk_range_set_value(GTK_RANGE(my_audio_widgets->latency), audio_ctx->latency);
 }
 
@@ -1663,7 +1821,7 @@ void audio_api_changed(GtkComboBox *combo, void *data)
 	audio_context_t *audio_ctx = create_audio_context(api, -1);
 	if(!audio_ctx)
 		api = AUDIO_NONE;
-		
+
 	/*update the config audio entry*/
 	config_t *my_config = config_get();
 	switch(api)
@@ -1730,8 +1888,8 @@ void audio_api_changed(GtkComboBox *combo, void *data)
 
 		if(index == 0) /*auto*/
 			audio_ctx->samprate = audio_ctx->list_devices[audio_ctx->device].samprate;
-		
-		gtk_range_set_value(GTK_RANGE(my_audio_widgets->latency), audio_ctx->latency);	
+
+		gtk_range_set_value(GTK_RANGE(my_audio_widgets->latency), audio_ctx->latency);
 	}
 
 }

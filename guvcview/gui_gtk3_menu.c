@@ -246,6 +246,30 @@ int gui_attach_gtk3_menu(GtkWidget *parent)
 		gtk_menu_shell_append(GTK_MENU_SHELL(menubar), menu_video_top);
 	}
 
+	/*rppg save menu*/
+	GtkWidget *rppg_menu = gtk_menu_new();
+
+	GtkWidget *menu_rppgtop = gtk_menu_item_new_with_label(_("rppg"));
+	GtkWidget *rppgfile = gtk_menu_item_new_with_label(_("File"));
+	GtkWidget *rppgsufix = gtk_check_menu_item_new_with_label(_("Increment Filename"));
+
+	gtk_widget_show (menu_rppgtop);
+	gtk_widget_show (rppgfile);
+	gtk_widget_show (rppgsufix);
+
+	g_signal_connect (GTK_MENU_ITEM(rppgfile), "activate",
+		G_CALLBACK (rppg_file_clicked), NULL);
+
+	/** add callback to Append sufix */
+	gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (rppgsufix), (get_rppg_sufix_flag() > 0));
+	g_signal_connect (GTK_CHECK_MENU_ITEM(rppgsufix), "toggled",
+		G_CALLBACK (rppg_sufix_toggled), NULL);
+
+	gtk_menu_item_set_submenu(GTK_MENU_ITEM(menu_rppgtop), rppg_menu);
+	gtk_menu_shell_append(GTK_MENU_SHELL(rppg_menu), rppgfile);
+	gtk_menu_shell_append(GTK_MENU_SHELL(rppg_menu), rppgsufix);
+	gtk_menu_shell_append(GTK_MENU_SHELL(menubar), menu_rppgtop);
+
 	/*show the menu*/
 	gtk_widget_show (menubar);
 	//gtk_container_set_resize_mode (GTK_CONTAINER(menubar), GTK_RESIZE_PARENT);

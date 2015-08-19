@@ -54,6 +54,8 @@ static int status_warning_id = 0;
 static GtkWidget *CapImageButt = NULL;
 /*The video capture button*/
 static GtkWidget *CapVideoButt = NULL;
+/*The rppg capture button*/
+static GtkWidget *CapRPPGButt = NULL;
 /*group list for menu video codecs*/
 GSList *video_codec_group = NULL;
 /*group list for menu audio codecs*/
@@ -72,7 +74,7 @@ static int gtk_devices_timer_id = 0;
  * sets the status message
  * args:
  *   message - message string
- * 
+ *
  * returns: FALSE
  */
 static gboolean set_status_message(const char *message)
@@ -82,7 +84,7 @@ static gboolean set_status_message(const char *message)
 		gtk_statusbar_pop (GTK_STATUSBAR(status_bar), status_warning_id);
 		gtk_statusbar_push (GTK_STATUSBAR(status_bar), status_warning_id, message);
 	}
-	
+
 	/*execute only once*/
 	return FALSE;
 }
@@ -254,7 +256,7 @@ static gboolean image_capture_toggle_button(gpointer *data)
 		return FALSE;
 
 	gtk_button_clicked(GTK_BUTTON(CapImageButt));
-	
+
 	return FALSE;
 }
 
@@ -313,9 +315,9 @@ static gboolean video_capture_toggle_button(gpointer *data)
 		active = -1;
 	else
 		active = 1;
-    
+
 	gui_set_video_capture_button_status_gtk3(active);
-	
+
 	return FALSE;
 }
 
@@ -359,6 +361,76 @@ void gui_set_video_capture_button_status_gtk3(int flag)
 	{
 		gtk_button_set_label(GTK_BUTTON(CapVideoButt), _("Cap. Video (V)"));
 		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(CapVideoButt), FALSE);
+	}
+}
+
+/*
+ * toggles rppg capture button status
+ * args:
+ *    pointer to function data
+ *
+ * asserts:
+ *    none
+ *
+ * returns: FALSE
+ */
+static gboolean rppg_capture_toggle_button(gpointer *data)
+{
+	if(!CapRPPGButt)
+		return FALSE;
+
+	int active = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(CapRPPGButt));
+	/*invert status*/
+    if(active > 0)
+		active = -1;
+	else
+		active = 1;
+
+	gui_set_video_capture_button_status_gtk3(active);
+
+	return FALSE;
+}
+
+/*
+ * click video capture button
+ * args:
+ *    none
+ *
+ * asserts:
+ *    none
+ *
+ * returns: none
+ */
+void gui_click_rppg_capture_button_gtk3()
+{
+	/*protect the call since it may come from a different thread*/
+	gdk_threads_add_idle ((GSourceFunc) rppg_capture_toggle_button, NULL);
+}
+
+/*
+ * sets the Video capture button status (on|off)
+ * args:
+ *   flag: video capture button status
+ *
+ * asserts:
+ *   none
+ *
+ * returns: none
+ */
+void gui_set_rppg_capture_button_status_gtk3(int flag)
+{
+	if(!CapRPPGButt)
+		return;
+
+	if(flag > 0)
+	{
+		gtk_button_set_label(GTK_BUTTON(CapRPPGButt), _("Stop rppg"));
+		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(CapRPPGButt), TRUE);
+	}
+	else
+	{
+		gtk_button_set_label(GTK_BUTTON(CapRPPGButt), _("Start rppg"));
+		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(CapRPPGButt), FALSE);
 	}
 }
 
@@ -628,14 +700,14 @@ int gui_attach_gtk3(int width, int height)
 	if (g_file_test(pix2path, G_FILE_TEST_EXISTS))
 	{
 		GtkWidget *ImgButton_Img = gtk_image_new_from_file (pix2path);
-#if GTK_VER_AT_LEAST(3,12)		
+#if GTK_VER_AT_LEAST(3,12)
 		gtk_button_set_always_show_image(GTK_BUTTON(CapImageButt), TRUE);
 #endif
 		gtk_button_set_image(GTK_BUTTON(CapImageButt), ImgButton_Img);
 		gtk_button_set_image_position(GTK_BUTTON(CapImageButt), GTK_POS_TOP);
 	}
 	g_free(pix2path);
-	
+
 	gtk_box_pack_start(GTK_BOX(HButtonBox), CapImageButt, TRUE, TRUE, 2);
 	gtk_widget_show (CapImageButt);
 
@@ -650,7 +722,7 @@ int gui_attach_gtk3(int width, int height)
 	if (g_file_test(pix3path, G_FILE_TEST_EXISTS))
 	{
 		GtkWidget *VideoButton_Img = gtk_image_new_from_file (pix3path);
-#if GTK_VER_AT_LEAST(3,12)		
+#if GTK_VER_AT_LEAST(3,12)
 		gtk_button_set_always_show_image(GTK_BUTTON(CapVideoButt), TRUE);
 #endif
 		gtk_button_set_image(GTK_BUTTON(CapVideoButt), VideoButton_Img);
@@ -664,6 +736,28 @@ int gui_attach_gtk3(int width, int height)
 	g_signal_connect (GTK_BUTTON(CapVideoButt), "clicked",
 		G_CALLBACK (capture_video_clicked), NULL);
 
+	/*rppg button*/
+	CapRPPGButt = gtk_toggle_button_new_with_mnemonic (_("Start. rPPG"));
+	gui_set_rppg_capture_button_status_gtk3(get_rppg_status());
+
+	char *pix5path = g_strconcat (PACKAGE_DATA_DIR, "/pixmaps/guvcview/movie.png",NULL);
+	if (g_file_test(pix5path, G_FILE_TEST_EXISTS))
+	{
+		GtkWidget *VideoButton_Img = gtk_image_new_from_file (pix5path);
+#if GTK_VER_AT_LEAST(3,12)
+		gtk_button_set_always_show_image(GTK_BUTTON(CapRPPGButt), TRUE);
+#endif
+		gtk_button_set_image(GTK_BUTTON(CapRPPGButt), VideoButton_Img);
+		gtk_button_set_image_position(GTK_BUTTON(CapRPPGButt), GTK_POS_TOP);
+	}
+	g_free(pix5path);
+
+	gtk_box_pack_start(GTK_BOX(HButtonBox), CapRPPGButt, TRUE, TRUE, 2);
+	gtk_widget_show (CapRPPGButt);
+
+	g_signal_connect (GTK_BUTTON(CapRPPGButt), "clicked",
+		G_CALLBACK (capture_rppg_clicked), NULL);
+
 	/*quit button*/
 	//GtkWidget *quitButton = gtk_button_new_from_stock(GTK_STOCK_QUIT);
 	GtkWidget *quitButton = gtk_button_new_with_mnemonic (_("_Quit"));
@@ -672,7 +766,7 @@ int gui_attach_gtk3(int width, int height)
 	if (g_file_test(pix4path,G_FILE_TEST_EXISTS))
 	{
 		GtkWidget *QButton_Img = gtk_image_new_from_file (pix4path);
-#if GTK_VER_AT_LEAST(3,12)		
+#if GTK_VER_AT_LEAST(3,12)
 		gtk_button_set_always_show_image(GTK_BUTTON(quitButton), TRUE);
 #endif
 		gtk_button_set_image(GTK_BUTTON(quitButton), QButton_Img);
@@ -838,6 +932,39 @@ int gui_attach_gtk3(int width, int height)
 
 		gtk_notebook_append_page(GTK_NOTEBOOK(tab_box), scroll_4, tab_4);
 	}
+	/*----------------------- rppg controls Tab ------------------------------*/
+	GtkWidget *scroll_5 = gtk_scrolled_window_new(NULL,NULL);
+	gtk_scrolled_window_set_placement(GTK_SCROLLED_WINDOW(scroll_5), GTK_CORNER_TOP_LEFT);
+	gtk_widget_show(scroll_5);
+
+	/*
+		* viewport is only needed for gtk < 3.8
+		* for 3.8 and above controls tab can be directly added to scroll1
+		*/
+	GtkWidget* viewport5 = gtk_viewport_new(NULL,NULL);
+	gtk_widget_show(viewport5);
+
+	gtk_container_add(GTK_CONTAINER(scroll_5), viewport5);
+
+	gui_attach_gtk3_rppgctrls(viewport5);
+
+	GtkWidget *tab_5 = gtk_grid_new();
+	gtk_widget_show (tab_5);
+
+	GtkWidget *tab_5_label = gtk_label_new(_("RPPG Controls"));
+	gtk_widget_show (tab_5_label);
+	/** check for files */
+	gchar *tab_5_icon_path = g_strconcat (PACKAGE_DATA_DIR,"/pixmaps/guvcview/audio_controls.png",NULL);
+	/** don't test for file - use default empty image if load fails */
+	/** get icon image*/
+	GtkWidget *tab_5_icon = gtk_image_new_from_file(tab_5_icon_path);
+	gtk_widget_show (tab_5_icon);
+
+	g_free(tab_5_icon_path);
+	gtk_grid_attach (GTK_GRID(tab_5), tab_5_icon, 0, 0, 1, 1);
+	gtk_grid_attach (GTK_GRID(tab_5), tab_5_label, 1, 0, 1, 1);
+
+	gtk_notebook_append_page(GTK_NOTEBOOK(tab_box), scroll_5, tab_5);
 
 	/* Attach the notebook (tabs) */
 	gtk_box_pack_start(GTK_BOX(maintable), tab_box, TRUE, TRUE, 2);
