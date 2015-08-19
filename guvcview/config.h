@@ -39,10 +39,13 @@ typedef struct _config_t
 	char *profile_name;
 	char *video_path;
 	char *video_name;
+	char *rppg_name;
+	char *rppg_path;
 	char *photo_path;
 	char *photo_name;
 	int video_sufix; /*flag if video file has auto suffix enable*/
 	int photo_sufix; /*flag if photo file has auto suffix enable*/
+	int rppg_sufix;
 	int fps_num;
 	int fps_denom;
 	int audio_device;/*audio device index*/
